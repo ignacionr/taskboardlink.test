@@ -6,6 +6,7 @@
 #include <random>
 #include <map>
 #include <functional>
+#include <regex>
 
 #include "./CImg.h"
 
@@ -67,6 +68,8 @@ static map<string, function<void(int&,int&)>> _moves = {
 		}}
 };
 
+regex set_regex("(x=(\\d+)(&y=(\\d+))?)|(y=(\\d))");
+
 static void ev_handler(struct mg_connection *nc, int ev, void *p) {
 	struct http_message *hm = (struct http_message *) p;
 	if (ev == MG_EV_HTTP_REQUEST) {
@@ -74,6 +77,36 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p) {
 		auto pmove = _moves.find(uri);
 		if (pmove != _moves.end()) {
 			(*pmove).second(x,y);
+			update_current();
+			reply_current(nc);
+		}
+		else if (uri == "/set") {
+			smatch m;
+			string qs(hm->query_string.p, hm->query_string.len);
+			if (regex_match(qs, m, set_regex)) {
+				auto& x1 = m[2];
+				if (x1.length()) {
+					x = atol(x1.str().c_str());
+					auto& y1 = m[4];
+					if (y1.length()) {
+						y = atol(y1.str().c_str());
+					}
+				}
+				else {
+					auto& y2 = m[6];
+					if (y2.length()) {
+						y = atol(y2.str().c_str());
+					}
+				}
+			}
+			char val_x[20];
+			if (mg_get_http_var(&hm->body, "x", val_x, sizeof(val_x)) > 0) {
+				x = atol(val_x);
+			}
+			char val_y[20];
+			if (mg_get_http_var(&hm->body, "y", val_y, sizeof(val_y)) > 0) {
+				y = atol(val_y);
+			}
 			update_current();
 			reply_current(nc);
 		}
