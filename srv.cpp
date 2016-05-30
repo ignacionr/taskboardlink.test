@@ -27,8 +27,8 @@ default_random_engine g(rd());
 
 
 void update_current() {
-	auto window = *p_base_image;
-	window.crop(x, y, 0, 0, x+639, y+479,0, 0);
+	auto window = p_base_image->get_crop
+		(x, y, 0, 0, x+639, y+479,0, 0);
 	window.blur(
 		(float)(g() % BLUR_MAX) / 10.0,
 		(float)(g() % BLUR_MAX) / 10.0,
